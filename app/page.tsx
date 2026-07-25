@@ -1,65 +1,122 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect } from "react";
+import { compareGuess } from "../lib/compareGuess";
+import Board from "../components/Board";
+import Keypad from "../components/Keypad";
 
 export default function Home() {
+  const answer = { month: 2, year: 1970 };
+  const clue = 'When did The Jackson 5 release their hit song "ABC"?';
+  const description =
+    '"ABC" is a song by American pop band the Jackson 5. It was released as a single on February 24, 1970, peaking at number one on the Billboard Hot 100 singles chart for two weeks in April 1970, and was number one on the Best Selling Soul Singles chart for four weeks that same month. It is the title track to the group\'s second album and sold 2 million copies within the first week of its release in the US and more than 4 million copies worldwide.';
+
+  const [guesses, setGuesses] = useState([]);
+  const [currentInput, setCurrentInput] = useState(""); // up to 6 digits: MM + YYYY
+  const [error, setError] = useState("");
+  const [dark, setDark] = useState(false);
+
+  const maxGuesses = 5;
+  const gameWon = guesses.some(
+    (g) => g.monthGroup.type === "exact" && g.yearGroups.every((y) => y.type === "exact")
+  );
+  const gameOver = gameWon || guesses.length >= maxGuesses;
+  const activeRowIndex = gameOver ? -1 : guesses.length;
+
+  function appendDigit(digit) {
+    if (gameOver) return;
+    setError("");
+    setCurrentInput((prev) => (prev.length < 6 ? prev + digit : prev));
+  }
+
+  function backspace() {
+    if (gameOver) return;
+    setError("");
+    setCurrentInput((prev) => prev.slice(0, -1));
+  }
+
+  function submitGuess() {
+    if (gameOver) return;
+
+    if (currentInput.length !== 6) {
+      setError("Enter a full MM YYYY date");
+      return;
+    }
+
+    const monthNum = parseInt(currentInput.slice(0, 2), 10);
+    const yearNum = parseInt(currentInput.slice(2), 10);
+
+    if (!monthNum || monthNum < 1 || monthNum > 12) {
+      setError("Enter a valid month (01-12)");
+      return;
+    }
+
+    setError("");
+    const result = compareGuess({ month: monthNum, year: yearNum }, answer);
+    setGuesses((prev) => [...prev, result]);
+    setCurrentInput("");
+  }
+
+  // Listen for physical keyboard input directly, since there's no visible input field anymore
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (gameOver) return;
+      if (/^[0-9]$/.test(e.key)) {
+        appendDigit(e.key);
+      } else if (e.key === "Enter") {
+        submitGuess();
+      } else if (e.key === "Backspace") {
+        backspace();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  });
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main
+      className={`relative flex flex-col items-center justify-center min-h-screen gap-6 p-4 transition-colors ${
+        dark ? "bg-neutral-900 text-neutral-100" : "bg-white text-neutral-900"
+      }`}
+    >
+      <button
+        onClick={() => setDark(!dark)}
+        className={`absolute top-4 right-4 px-3 py-1 text-sm font-semibold ${
+          dark ? "bg-neutral-700 text-white" : "bg-neutral-200 text-neutral-800"
+        }`}
+      >
+        {dark ? "Light Mode" : "Dark Mode"}
+      </button>
+
+      <h1 className="text-5xl font-bold">date - um???</h1>
+
+      <div
+        className={`max-w-md text-center px-5 py-4 text-lg font-medium ${
+          dark ? "bg-neutral-800 text-neutral-100" : "bg-neutral-100 text-neutral-900"
+        }`}
+      >
+        {clue}
+      </div>
+
+      {error && <p className="text-red-500 text-sm">{error}</p>}
+      {gameWon && <p className="font-semibold text-emerald-500">You got it!</p>}
+      {!gameWon && gameOver && <p className="font-semibold">Out of guesses!</p>}
+
+      <Board guesses={guesses} activeRowIndex={activeRowIndex} activeInput={currentInput} dark={dark} />
+
+      {!gameOver && (
+        <Keypad onDigit={appendDigit} onEnter={submitGuess} onBackspace={backspace} dark={dark} disabled={gameOver} />
+      )}
+
+      {gameOver && (
+        <div
+          className={`max-w-md text-center px-5 py-4 text-base leading-relaxed ${
+            dark ? "bg-neutral-800 text-neutral-100" : "bg-neutral-100 text-neutral-900"
+          }`}
+        >
+          {description}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      )}
+    </main>
   );
 }
