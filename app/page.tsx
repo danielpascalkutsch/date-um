@@ -79,16 +79,17 @@ export default function Home() {
         dark ? "bg-neutral-900 text-neutral-100" : "bg-white text-neutral-900"
       }`}
     >
-      <button
-        onClick={() => setDark(!dark)}
-        className={`absolute top-4 right-4 px-3 py-1 text-sm font-semibold ${
-          dark ? "bg-neutral-700 text-white" : "bg-neutral-200 text-neutral-800"
-        }`}
-      >
-        {dark ? "Light Mode" : "Dark Mode"}
-      </button>
-
-      <h1 className="text-5xl font-bold">date - um???</h1>
+      <div className="w-full max-w-md flex justify-between items-center">
+        <h1 className="text-3xl font-bold">date-um???</h1>
+        <button
+          onClick={() => setDark(!dark)}
+          className={`px-3 py-1 text-sm font-semibold ${
+            dark ? "bg-neutral-700 text-white" : "bg-neutral-200 text-neutral-800"
+          }`}
+        >
+          {dark ? "Light Mode" : "Dark Mode"}
+        </button>
+      </div>
 
       <div
         className={`max-w-md text-center px-5 py-4 text-lg font-medium ${

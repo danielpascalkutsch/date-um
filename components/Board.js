@@ -82,12 +82,30 @@ function BoardRow({ result, dark, boxSize, active, activeInput }) {
   );
 }
 
+function BoardHeader({ dark, boxSize }) {
+  return (
+    <div className="flex gap-3">
+      <div className={`flex gap-1 justify-center`} style={{ width: "calc(2 * 3.5rem + 0.25rem)" }}>
+        <span className={`text-sm font-semibold ${dark ? "text-neutral-300" : "text-neutral-600"}`}>
+          Month
+        </span>
+      </div>
+      <div className="flex gap-1 justify-center" style={{ width: "calc(4 * 3.5rem + 0.75rem)" }}>
+        <span className={`text-sm font-semibold ${dark ? "text-neutral-300" : "text-neutral-600"}`}>
+          Year
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function Board({ guesses, activeRowIndex, activeInput, dark }) {
   const boxSize = "w-14 h-16";
   const totalRows = 5;
 
   return (
     <div className="flex flex-col gap-2 items-center">
+      <BoardHeader dark={dark} boxSize={boxSize} />
       {new Array(totalRows).fill(null).map((_, idx) => (
         <BoardRow
           key={idx}

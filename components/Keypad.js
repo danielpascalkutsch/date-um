@@ -18,7 +18,7 @@ export default function Keypad({ onDigit, onEnter, onBackspace, dark, disabled }
             type="button"
             disabled={disabled}
             onClick={() => onDigit(d)}
-            className={`w-12 h-12 text-lg font-semibold ${keyClasses} disabled:opacity-40`}
+            className={`w-12 h-12 text-lg font-semibold cursor-pointer ${keyClasses} disabled:opacity-40`}
           >
             {d}
           </button>
@@ -29,7 +29,7 @@ export default function Keypad({ onDigit, onEnter, onBackspace, dark, disabled }
           type="button"
           disabled={disabled}
           onClick={onBackspace}
-          className={`flex-1 h-12 text-lg font-semibold ${keyClasses} disabled:opacity-40`}
+          className={`flex-1 h-12 text-lg font-semibold cursor-pointer ${keyClasses} disabled:opacity-40`}
         >
           ⌫
         </button>
@@ -37,7 +37,7 @@ export default function Keypad({ onDigit, onEnter, onBackspace, dark, disabled }
           type="button"
           disabled={disabled}
           onClick={onEnter}
-          className={`flex-1 h-12 text-lg font-semibold ${enterClasses} disabled:opacity-40`}
+          className={`flex-1 h-12 text-lg font-semibold cursor-pointer ${enterClasses} disabled:opacity-40`}
         >
           Enter
         </button>
