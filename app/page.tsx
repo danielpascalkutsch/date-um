@@ -11,7 +11,7 @@ export default function Home() {
   const description =
     '"ABC" is a song by American pop band the Jackson 5. It was released as a single on February 24, 1970, peaking at number one on the Billboard Hot 100 singles chart for two weeks in April 1970, and was number one on the Best Selling Soul Singles chart for four weeks that same month. It is the title track to the group\'s second album and sold 2 million copies within the first week of its release in the US and more than 4 million copies worldwide.';
 
-  const [guesses, setGuesses] = useState([]);
+  const [guesses, setGuesses] = useState<any[]>([]);
   const [currentInput, setCurrentInput] = useState(""); // up to 6 digits: MM + YYYY
   const [error, setError] = useState("");
   const [dark, setDark] = useState(false);
