@@ -4,17 +4,20 @@ import { useState, useEffect } from "react";
 import { compareGuess } from "../lib/compareGuess";
 import Board from "../components/Board";
 import Keypad from "../components/Keypad";
+import { getTodaysPuzzle } from "../lib/getTodaysPuzzle";
+import Countdown from "../components/Countdown";
 
 export default function Home() {
-  const answer = { month: 2, year: 1970 };
-  const clue = 'When did The Jackson 5 release their hit song "ABC"?';
-  const description =
-    '"ABC" is a song by American pop band the Jackson 5. It was released as a single on February 24, 1970, peaking at number one on the Billboard Hot 100 singles chart for two weeks in April 1970, and was number one on the Best Selling Soul Singles chart for four weeks that same month. It is the title track to the group\'s second album and sold 2 million copies within the first week of its release in the US and more than 4 million copies worldwide.';
+  const puzzle = getTodaysPuzzle();
+  const answer = { month: puzzle.month, year: puzzle.year };
+  const clue = puzzle.clue;
+  const description = puzzle.description;
 
   const [guesses, setGuesses] = useState<any[]>([]);
   const [currentInput, setCurrentInput] = useState(""); // up to 6 digits: MM + YYYY
   const [error, setError] = useState("");
   const [dark, setDark] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   const maxGuesses = 5;
   const gameWon = guesses.some(
@@ -79,16 +82,30 @@ export default function Home() {
         dark ? "bg-neutral-900 text-neutral-100" : "bg-white text-neutral-900"
       }`}
     >
+
       <div className="w-full max-w-md flex justify-between items-center">
         <h1 className="text-3xl font-bold">date-um???</h1>
-        <button
-          onClick={() => setDark(!dark)}
-          className={`px-3 py-1 text-sm font-semibold ${
-            dark ? "bg-neutral-700 text-white" : "bg-neutral-200 text-neutral-800"
-          }`}
-        >
-          {dark ? "Light Mode" : "Dark Mode"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowHelp(true)}
+            aria-label="How to play"
+            className={`w-9 h-9 rounded-full border-2 flex items-center justify-center font-bold flex-shrink-0 ${
+              dark ? "border-neutral-400 text-neutral-100" : "border-neutral-400 text-neutral-900"
+            }`}
+          >
+            ?
+          </button>
+          <button
+            onClick={() => setDark(!dark)}
+            aria-label="Toggle dark mode"
+            className="w-9 h-9 rounded-full overflow-hidden border-2 border-neutral-400 flex-shrink-0"
+          >
+            <svg viewBox="0 0 32 32" className="w-full h-full">
+              <path d="M0 32 L32 32 L32 0 Z" fill="#171717" />
+              <path d="M0 32 L0 0 L32 0 Z" fill="#f5f5f5" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div
@@ -116,6 +133,44 @@ export default function Home() {
           }`}
         >
           {description}
+        </div>
+      )}
+      
+      {gameOver && <Countdown dark={dark} />}
+
+      {showHelp && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={() => setShowHelp(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className={`max-w-md w-full p-6 leading-relaxed ${
+              dark ? "bg-neutral-800 text-neutral-100" : "bg-white text-neutral-900"
+            }`}
+          >
+            <h2 className="text-xl font-bold mb-3">How to Play</h2>
+            <p className="mb-2">
+              Guess the month and year (MM YYYY) that answers the clue. You have 5 tries.
+            </p>
+            <p className="mb-2">
+              The <strong>month</strong> is always checked as one number: green means correct,
+              a line on top means your guess is too early, a line on the bottom means too late.
+            </p>
+            <p className="mb-2">
+              The <strong>year</strong> is checked left to right, one digit at a time. As soon as
+              a digit is wrong, that digit and everything after it are grouped together and
+              checked as one number — even if a later digit would have matched on its own.
+            </p>
+            <button
+              onClick={() => setShowHelp(false)}
+              className={`mt-4 px-4 py-2 font-semibold ${
+                dark ? "bg-neutral-100 text-neutral-900" : "bg-black text-white"
+              }`}
+            >
+              Got it
+            </button>
+          </div>
         </div>
       )}
     </main>
