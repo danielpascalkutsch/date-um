@@ -18,12 +18,12 @@ export default function Home() {
 
   const maxGuesses = 5;
   const gameWon = guesses.some(
-    (g) => g.monthGroup.type === "exact" && g.yearGroups.every((y) => y.type === "exact")
+    (g) => g.monthGroup.type === "exact" && g.yearGroups.every((y: any) => y.type === "exact")
   );
   const gameOver = gameWon || guesses.length >= maxGuesses;
   const activeRowIndex = gameOver ? -1 : guesses.length;
 
-  function appendDigit(digit) {
+  function appendDigit(digit: string) {
     if (gameOver) return;
     setError("");
     setCurrentInput((prev) => (prev.length < 6 ? prev + digit : prev));
@@ -59,7 +59,7 @@ export default function Home() {
 
   // Listen for physical keyboard input directly, since there's no visible input field anymore
   useEffect(() => {
-    function handleKeyDown(e) {
+    function handleKeyDown(e: KeyboardEvent) {
       if (gameOver) return;
       if (/^[0-9]$/.test(e.key)) {
         appendDigit(e.key);
