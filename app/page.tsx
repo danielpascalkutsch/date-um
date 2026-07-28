@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import { compareGuess } from "../lib/compareGuess";
 import Board from "../components/Board";
 import Keypad from "../components/Keypad";
-import { getTodaysPuzzle } from "../lib/getTodaysPuzzle";
 import Countdown from "../components/Countdown";
+import { getTodaysPuzzle, getMillisUntilNextPuzzle, getPuzzleNumber } from "../lib/getTodaysPuzzle";
+import { buildShareText } from "../lib/buildShareText";
+
 
 export default function Home() {
   const puzzle = getTodaysPuzzle();
@@ -17,6 +19,8 @@ export default function Home() {
   const [currentInput, setCurrentInput] = useState(""); // up to 6 digits: MM + YYYY
   const [error, setError] = useState("");
   const [dark, setDark] = useState(false);
+  const puzzleNumber = getPuzzleNumber();
+  const [shareStatus, setShareStatus] = useState("");
   const [showHelp, setShowHelp] = useState(false);
 
   const maxGuesses = 5;
@@ -58,6 +62,24 @@ export default function Home() {
     const result = compareGuess({ month: monthNum, year: yearNum }, answer);
     setGuesses((prev) => [...prev, result]);
     setCurrentInput("");
+  }
+
+  async function handleShare() {
+    const text = buildShareText(guesses, gameWon, puzzleNumber);
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ text });
+      } catch (err) {}
+    } else {
+      try {
+        await navigator.clipboard.writeText(text);
+        setShareStatus("Copied to clipboard!");
+        setTimeout(() => setShareStatus(""), 2000);
+      } catch (err) {
+        setShareStatus("Couldn't copy — try manually.");
+      }
+    }
   }
 
   // Listen for physical keyboard input directly, since there's no visible input field anymore
@@ -136,6 +158,22 @@ export default function Home() {
         </div>
       )}
       
+      {gameOver && (
+        <div className="flex flex-col items-center gap-2">
+          <button
+            onClick={handleShare}
+            className={`px-5 py-2 font-semibold ${
+              dark ? "bg-neutral-100 text-neutral-900" : "bg-black text-white"
+            }`}
+          >
+            Share Results
+          </button>
+          {shareStatus && (
+            <p className={`text-sm ${dark ? "text-neutral-300" : "text-neutral-600"}`}>{shareStatus}</p>
+          )}
+        </div>
+      )}
+
       {gameOver && <Countdown dark={dark} />}
 
       {showHelp && (
@@ -150,18 +188,36 @@ export default function Home() {
             }`}
           >
             <h2 className="text-xl font-bold mb-3">How to Play</h2>
-            <p className="mb-2">
-              Guess the month and year (MM YYYY) that answers the clue. You have 5 tries.
+            <p className="mb-3">
+              Guess the month and year for the clue. You get 5 tries.
             </p>
-            <p className="mb-2">
-              The <strong>month</strong> is always checked as one number: green means correct,
-              a line on top means your guess is too early, a line on the bottom means too late.
+            <p className="mb-3">
+              🟩 = correct. A line means too early or too late — and if one digit is
+              wrong, every digit after it gets grouped and judged together.
             </p>
-            <p className="mb-2">
-              The <strong>year</strong> is checked left to right, one digit at a time. As soon as
-              a digit is wrong, that digit and everything after it are grouped together and
-              checked as one number — even if a later digit would have matched on its own.
-            </p>
+
+            {/* Worked example using real box styles */}
+            <div className="mb-3">
+              <p className="text-sm mb-2 font-medium">Example: answer is 03 1988</p>
+              <div className="flex gap-3">
+                <div className="flex gap-1">
+                  <div className="w-8 h-10 flex items-center justify-center text-sm font-bold bg-emerald-600 text-white">0</div>
+                  <div className="w-8 h-10 flex items-center justify-center text-sm font-bold bg-emerald-600 text-white">3</div>
+                </div>
+                <div className="flex gap-1">
+                  <div className="w-8 h-10 flex items-center justify-center text-sm font-bold bg-emerald-600 text-white">1</div>
+                  <div className="w-8 h-10 flex items-center justify-center text-sm font-bold bg-emerald-600 text-white">9</div>
+                  <div className="relative flex gap-1">
+                    <div className="w-8 h-10 flex items-center justify-center text-sm font-bold bg-neutral-200">6</div>
+                    <div className="w-8 h-10 flex items-center justify-center text-sm font-bold bg-neutral-200">2</div>
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-sky-400" />
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs mt-2 text-neutral-500">
+                Guessed 1962 — 1 and 9 are right, but 6 was wrong, so 62 is grouped and marked too low.
+              </p>
+            </div>
             <button
               onClick={() => setShowHelp(false)}
               className={`mt-4 px-4 py-2 font-semibold ${
