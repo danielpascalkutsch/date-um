@@ -17,7 +17,7 @@ export default function Home() {
   const puzzleNumber = getPuzzleNumber();
   const storageKey = `date-um-progress-${puzzleNumber}`;
 
-  const [guesses, setGuesses] = useState(() => {
+  const [guesses, setGuesses] = useState<any[]>(() => {
     if (typeof window === "undefined") return [];
     const saved = localStorage.getItem(storageKey);
     return saved ? JSON.parse(saved) : [];
