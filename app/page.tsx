@@ -207,10 +207,10 @@ export default function Home() {
               🟩 = correct. A top line means guess later and a bottom line means guess earlier.
             </p>
             <p className="mb-3">
-              Month: both digits must be guessed correctly together.
+              Month - one whole number, not digit by digit.
             </p>
             <p className="mb-3">
-              Year: if one digit is wrong, every digit after is considered wrong too.
+              Year - if one digit is wrong, every digit after is considered wrong too.
             </p>
 
             {/* Worked example using real box styles */}
