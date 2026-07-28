@@ -14,12 +14,18 @@ export default function Home() {
   const answer = { month: puzzle.month, year: puzzle.year };
   const clue = puzzle.clue;
   const description = puzzle.description;
+  const puzzleNumber = getPuzzleNumber();
+  const storageKey = `date-um-progress-${puzzleNumber}`;
 
-  const [guesses, setGuesses] = useState<any[]>([]);
+  const [guesses, setGuesses] = useState(() => {
+    if (typeof window === "undefined") return [];
+    const saved = localStorage.getItem(storageKey);
+    return saved ? JSON.parse(saved) : [];
+  });
   const [currentInput, setCurrentInput] = useState(""); // up to 6 digits: MM + YYYY
   const [error, setError] = useState("");
   const [dark, setDark] = useState(false);
-  const puzzleNumber = getPuzzleNumber();
+
   const [shareStatus, setShareStatus] = useState("");
   const [showHelp, setShowHelp] = useState(false);
 
@@ -97,6 +103,12 @@ export default function Home() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   });
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(storageKey, JSON.stringify(guesses));
+    }
+  }, [guesses, storageKey]);
 
   return (
     <main
