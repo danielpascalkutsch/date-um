@@ -65,7 +65,7 @@ export default function Home() {
   }
 
   async function handleShare() {
-    const text = buildShareText(guesses, gameWon, puzzleNumber);
+    const text = buildShareText(guesses, gameWon, puzzleNumber, clue);
 
     if (navigator.share) {
       try {
@@ -157,7 +157,7 @@ export default function Home() {
           {description}
         </div>
       )}
-      
+
       {gameOver && (
         <div className="flex flex-col items-center gap-2">
           <button
@@ -189,16 +189,21 @@ export default function Home() {
           >
             <h2 className="text-xl font-bold mb-3">How to Play</h2>
             <p className="mb-3">
-              Guess the month and year for the clue. You get 5 tries.
+              Guess the month and year of the clue. You get 5 tries.
             </p>
             <p className="mb-3">
-              🟩 = correct. A line means too early or too late — and if one digit is
-              wrong, every digit after it gets grouped and judged together.
+              🟩 = correct. A top line means guess later and a bottom line means guess earlier.
+            </p>
+            <p className="mb-3">
+              Month: both digits must be guessed correctly together.
+            </p>
+            <p className="mb-3">
+              Year: if one digit is wrong, every digit after is considered wrong too.
             </p>
 
             {/* Worked example using real box styles */}
             <div className="mb-3">
-              <p className="text-sm mb-2 font-medium">Example: answer is 03 1988</p>
+              <p className="text-sm mb-2 font-medium">Example: answer is 03 1982</p>
               <div className="flex gap-3">
                 <div className="flex gap-1">
                   <div className="w-8 h-10 flex items-center justify-center text-sm font-bold bg-emerald-600 text-white">0</div>
