@@ -27,7 +27,7 @@ export default function Home() {
   const [dark, setDark] = useState(false);
 
   const [shareStatus, setShareStatus] = useState("");
-  const [showHelp, setShowHelp] = useState(false);
+  const [showHelp, setShowHelp] = useState(true);
 
   const maxGuesses = 5;
   const gameWon = guesses.some(
