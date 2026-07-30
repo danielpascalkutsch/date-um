@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { compareGuess } from "../lib/compareGuess";
 import Board from "../components/Board";
 import Keypad from "../components/Keypad";
@@ -8,26 +8,29 @@ import Countdown from "../components/Countdown";
 import { getTodaysPuzzle, getMillisUntilNextPuzzle, getPuzzleNumber } from "../lib/getTodaysPuzzle";
 import { buildShareText } from "../lib/buildShareText";
 
-
 export default function Home() {
-  const puzzle = getTodaysPuzzle();
-  const answer = { month: puzzle.month, year: puzzle.year };
-  const clue = puzzle.clue;
-  const description = puzzle.description;
-  const puzzleNumber = getPuzzleNumber();
-  const storageKey = `date-um-progress-${puzzleNumber}`;
+  // Puzzle is loaded AFTER mount only — never computed during server render,
+  // so there's nothing for the server and client to disagree about.
+  const [puzzle, setPuzzle] = useState<any>(null);
+  const puzzleNumber = puzzle ? getPuzzleNumber() : null;
+  const storageKey = puzzle ? `date-um-progress-${puzzleNumber}` : null;
 
-  const [guesses, setGuesses] = useState<any[]>(() => {
-    if (typeof window === "undefined") return [];
-    const saved = localStorage.getItem(storageKey);
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [currentInput, setCurrentInput] = useState(""); // up to 6 digits: MM + YYYY
+  const answer = puzzle ? { month: puzzle.month, year: puzzle.year } : { month: 1, year: 2000 };
+  const clue = puzzle ? puzzle.clue : "";
+  const description = puzzle ? puzzle.description : "";
+
+  // guesses starts empty for BOTH server and client — no localStorage read during render.
+  const [guesses, setGuesses] = useState<any[]>([]);
+  const [currentInput, setCurrentInput] = useState("");
   const [error, setError] = useState("");
   const [dark, setDark] = useState(false);
-
   const [shareStatus, setShareStatus] = useState("");
   const [showHelp, setShowHelp] = useState(true);
+  const [showShareModal, setShowShareModal] = useState(false);
+
+  // hasLoadedGuesses is a REF, not state — it updates immediately/synchronously,
+  // so there's no race where "save" can fire before "load" has finished.
+  const hasLoadedGuesses = useRef(false);
 
   const maxGuesses = 5;
   const gameWon = guesses.some(
@@ -49,7 +52,7 @@ export default function Home() {
   }
 
   function submitGuess() {
-    if (gameOver) return;
+    if (gameOver || !puzzle) return;
 
     if (currentInput.length !== 6) {
       setError("Enter a full MM YYYY date");
@@ -88,7 +91,30 @@ export default function Home() {
     }
   }
 
-  // Listen for physical keyboard input directly, since there's no visible input field anymore
+  // Load today's puzzle — browser only, runs once after mount.
+  useEffect(() => {
+    setPuzzle(getTodaysPuzzle());
+  }, []);
+
+  // Once the puzzle (and therefore storageKey) is ready, load any saved guesses for it.
+  useEffect(() => {
+    if (!storageKey) return;
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      setGuesses(JSON.parse(saved));
+    }
+    hasLoadedGuesses.current = true;
+  }, [storageKey]);
+
+  // Save guesses — but ONLY after the load effect above has already run,
+  // so we never overwrite real saved progress with an empty starting array.
+  useEffect(() => {
+    if (!storageKey) return;
+    if (!hasLoadedGuesses.current) return;
+    localStorage.setItem(storageKey, JSON.stringify(guesses));
+  }, [guesses, storageKey]);
+
+  // Physical keyboard support
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (gameOver) return;
@@ -103,12 +129,15 @@ export default function Home() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   });
-  
+
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(storageKey, JSON.stringify(guesses));
+    if (gameOver) {
+      setShowShareModal(true);
     }
-  }, [guesses, storageKey]);
+  }, [gameOver]);
+
+  // Don't render the real page until the puzzle has loaded client-side.
+  if (!puzzle) return null;
 
   return (
     <main
@@ -116,7 +145,6 @@ export default function Home() {
         dark ? "bg-neutral-900 text-neutral-100" : "bg-white text-neutral-900"
       }`}
     >
-
       <div className="w-full max-w-md flex justify-between items-center">
         <h1 className="text-3xl font-bold">date-um???</h1>
         <div className="flex gap-2">
@@ -200,26 +228,20 @@ export default function Home() {
             }`}
           >
             <h2 className="text-xl font-bold mb-3">How to Play</h2>
+            <p className="mb-3">Guess the month and year of the clue. You get 5 tries.</p>
             <p className="mb-3">
-              Guess the month and year of the clue. You get 5 tries.
+              🟩 = correct. A top line means guess higher and a bottom line means guess lower.
             </p>
-            <p className="mb-3">
-              🟩 = correct. A top line means guess later and a bottom line means guess earlier.
-            </p>
-            <p className="mb-3">
-              Month - one whole number, not digit by digit.
-            </p>
-            <p className="mb-3">
-              Year - if one digit is wrong, every digit after is considered wrong too.
-            </p>
+            <p className="mb-3">Month - one whole number, not digit by digit.</p>
+            <p className="mb-3">Year - if one digit is wrong, every digit after is considered wrong too.</p>
 
-            {/* Worked example using real box styles */}
             <div className="mb-3">
               <p className="text-sm mb-2 font-medium">Example: answer is 03 1982</p>
               <div className="flex gap-3">
-                <div className="flex gap-1">
-                  <div className="w-8 h-10 flex items-center justify-center text-sm font-bold bg-emerald-600 text-white">0</div>
-                  <div className="w-8 h-10 flex items-center justify-center text-sm font-bold bg-emerald-600 text-white">3</div>
+                <div className="relative flex gap-1">
+                  <div className="w-8 h-10 flex items-center justify-center text-sm font-bold bg-neutral-200">0</div>
+                  <div className="w-8 h-10 flex items-center justify-center text-sm font-bold bg-neutral-200">5</div>
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-rose-400" />
                 </div>
                 <div className="flex gap-1">
                   <div className="w-8 h-10 flex items-center justify-center text-sm font-bold bg-emerald-600 text-white">1</div>
@@ -232,7 +254,7 @@ export default function Home() {
                 </div>
               </div>
               <p className="text-xs mt-2 text-neutral-500">
-                Guessed 1962 — 1 and 9 are right, but 6 was wrong, so 62 is grouped and marked too low.
+                Guessed 05 1962 — month 05 is too late (line on bottom), year: 1 and 9 are right, but 6 was wrong, so 62 is grouped and marked too low (line on top).
               </p>
             </div>
             <button
@@ -242,6 +264,41 @@ export default function Home() {
               }`}
             >
               Got it
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showShareModal && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={() => setShowShareModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className={`max-w-md w-full p-6 text-center ${
+              dark ? "bg-neutral-800 text-neutral-100" : "bg-white text-neutral-900"
+            }`}
+          >
+            <h2 className="text-xl font-bold mb-3">
+              {gameWon ? "You got it!" : "Nice try!"}
+            </h2>
+            <p className="mb-4">Share your results with friends.</p>
+            <button
+              onClick={handleShare}
+              className={`px-5 py-2 font-semibold ${
+                dark ? "bg-neutral-100 text-neutral-900" : "bg-black text-white"
+              }`}
+            >
+              Share Results
+            </button>
+            <button
+              onClick={() => setShowShareModal(false)}
+              className={`block mx-auto mt-4 text-sm underline ${
+                dark ? "text-neutral-400" : "text-neutral-500"
+              }`}
+            >
+              Close
             </button>
           </div>
         </div>
